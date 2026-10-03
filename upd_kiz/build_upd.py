@@ -80,8 +80,10 @@ def main() -> int:
     p.add_argument("--upd", required=True, type=Path)
     p.add_argument("--kiz", required=True, type=Path)
     p.add_argument("--out", required=True, type=Path)
-    p.add_argument("--fio", required=True, help="ФИО сотрудника-подписанта")
-    p.add_argument("--dolzhn", required=True, help="Должность сотрудника")
+    p.add_argument("--keep-signer", action="store_true",
+                   help="Оставить подписанта из исходного УПД (как в прошлых УПД)")
+    p.add_argument("--fio", help="ФИО сотрудника-подписанта")
+    p.add_argument("--dolzhn", help="Должность сотрудника")
     p.add_argument("--mchd-nom", help="Номер (GUID) машиночитаемой доверенности")
     p.add_argument("--mchd-date", help="Дата выдачи МЧД, ДД.ММ.ГГГГ")
     p.add_argument("--mchd-system", default="https://m4d.nalog.gov.ru/",
@@ -91,6 +93,8 @@ def main() -> int:
     p.add_argument("--principal-fio", help="ФИО выдавшего бумажную доверенность")
     p.add_argument("--new-guid", action="store_true", help="Новый GUID в ИдФайл")
     a = p.parse_args()
+    if not a.keep_signer and not (a.fio and a.dolzhn):
+        p.error("укажите --fio и --dolzhn или --keep-signer")
     if a.mchd_nom and not a.mchd_date:
         p.error("--mchd-date обязателен вместе с --mchd-nom")
     if a.paper_nom and not (a.paper_date and a.principal_fio):
@@ -123,9 +127,9 @@ def main() -> int:
         print("ОШИБКИ сопоставления:\n  " + "\n  ".join(errors), file=sys.stderr)
         return 1
 
-    doc = root.find("Документ")
-    old = doc.find("Подписант")
-    doc.replace(old, build_signer(a))
+    if not a.keep_signer:
+        doc = root.find("Документ")
+        doc.replace(doc.find("Подписант"), build_signer(a))
 
     guid_re = r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
     file_id = root.get("ИдФайл")

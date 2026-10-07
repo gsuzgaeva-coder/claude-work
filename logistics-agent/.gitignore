@@ -1,0 +1,11 @@
+.env
+*.json.key
+credentials*.json
+__pycache__/
+.venv/
+out/
+data/cache/
+data/входящие/*
+!data/входящие/.gitkeep
+backups/*
+!backups/.gitkeep
